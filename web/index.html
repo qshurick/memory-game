@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Memory game</title>
+    <script type="application/javascript" src="./CardBack.js"></script>
+    <script type="application/javascript" src="./Card.js"></script>
+    <style type="text/css">
+        [data-app-root] {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            position: relative;
+            width: 100px;
+            height: 175px;
+            background: white;
+
+            margin: 20px;
+
+            border: 1px solid black;
+
+            cursor: pointer;
+        }
+
+        .card img {
+            margin: 0;
+            padding: 0;
+
+            width: 100%;
+            height: 100%;
+        }
+
+        .card p {
+            margin: 0;
+            padding: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+
+            font-size: 2em;
+
+            text-align: center;
+            vertical-align: center;
+        }
+
+        .card.flipped p {
+            color: transparent;
+            background: transparent;
+        }
+
+        #log {
+            position: absolute;
+            top: 0;
+            right: 0;
+
+            height: 150px;
+            overflow-y: scroll;
+
+            list-style: none;
+        }
+    </style>
+</head>
+<body>
+<h1>Memory game</h1>
+<select id="numberOfCards">
+    <option value="">-- select amount of cards --</option>
+    <option value="4">4 cards</option>
+    <option value="8">8 cards</option>
+    <option value="12">12 cards</option>
+</select>
+<article data-app-root>
+</article>
+<ul id="log"></ul>
+<script type="application/javascript">
+    const back = new CardBack();
+    const container = document.querySelector('[data-app-root]');
+    const log = document.getElementById('log');
+    const FAIL = '🚫';
+    const SUCCESS = '✅';
+
+    document.getElementById('numberOfCards').addEventListener('change', async function() {
+        this.disabled = true;
+        const response = await fetch(new Request('http://localhost:8081/random?size=' + this.value));
+        const randomArray = await response.json();
+
+        let cards = [];
+        function check(card) {
+            const isValidMove = cards
+                .filter(otherCard => !otherCard.done)
+                .filter(otherCard => otherCard !== card)
+                .filter(otherCard => otherCard.value < card.value)
+                .length === 0
+
+            const logEntry = document.createElement('li');
+            if (isValidMove) {
+                logEntry.innerText = `${SUCCESS} ${card.value}`;
+            } else {
+                logEntry.innerText = `${FAIL} ${card.value}`;
+            }
+            log.appendChild(logEntry);
+            log.scrollTop = log.scrollHeight;
+
+            return isValidMove;
+        }
+        cards = randomArray.map(value => new Card(container, back, value, check));
+    });
+</script>
+</body>
+</html>
